@@ -11,6 +11,7 @@ This is a simple web application that uses the [ai-api](https://api-docs.deepsee
    
 ## display
 
+![alt text](image-display.png)
+
 ![alt text](image.png)
 
-![alt text](image-1.png)
