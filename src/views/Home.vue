@@ -1,7 +1,15 @@
 <template>
   <div class="chat-container">
-    <div>
-      <!-- 选择不同角色设定 -->
+    <div class="character-select">
+      <div
+        v-for="char in characters"
+        :key="char.id"
+        :class="['character-option', { active: currentCharacter.id === char.id }]"
+        @click="selectCharacter(char)"
+      >
+        <img :src="char.avatar" :alt="char.name">
+        <span>{{ char.name }}</span>
+      </div>
     </div>
     <div class="messages-container">
       <div
@@ -48,14 +56,12 @@
 
 <script setup>
 import OpenAI from "openai";
-import { ref } from "vue";
+import { ref, computed, onUnmounted } from "vue";
 import { marked } from "marked";
-import { systemContent } from "/src/config/systemPrompt";
+import { characters } from "/src/config/characters";
 
 const apiKey = import.meta.env.VITE_DEEPSEEK_API_KEY;
 const baseURL = import.meta.env.VITE_DEEPSEEK_BASE_URL;
-const userAvatarPath = "/src/assets/user-avatar.png";
-const assistantAvatarPath = "src/assets/assistant-avatar.png";
 
 const openai = new OpenAI({
   baseURL: baseURL,
@@ -67,6 +73,21 @@ const openai = new OpenAI({
 const message = ref("");
 const messages = ref([]);
 const isLoading = ref(false);
+const currentCharacter = ref(characters[0]);
+const userAvatarPath = "/src/assets/user-avatar.png";
+const assistantAvatarPath = computed(() => currentCharacter.value.avatar);
+
+// 添加取消控制器
+let currentController = null;
+
+const selectCharacter = (character) => {
+  if (currentController) {
+    currentController.abort(); // 中断当前请求
+  }
+  currentCharacter.value = character;
+  messages.value = [];
+  isLoading.value = false;
+};
 
 const sendMessage = async (content) => {
   try {
@@ -74,6 +95,9 @@ const sendMessage = async (content) => {
     if (!content.trim()) return;
     // 设置加载状态
     isLoading.value = true;
+
+    // 创建新的控制器
+    currentController = new AbortController();
 
     // 添加用户消息
     messages.value.push({
@@ -94,11 +118,12 @@ const sendMessage = async (content) => {
 
     const stream = await openai.chat.completions.create({
       messages: [
-        { role: "system", content: systemContent },
+        { role: "system", content: currentCharacter.value.systemPrompt },
         { role: "user", content: content },
       ],
       model: "deepseek-chat",
       stream: true,
+      signal: currentController.signal, // 添加控制器信号
     });
 
     // 处理流式响应
@@ -107,16 +132,28 @@ const sendMessage = async (content) => {
       messages.value[aiMessageId].content += content;
     }
   } catch (error) {
-    console.error("Error:", error);
-    messages.value.push({
-      id: messages.value.length,
-      content: "抱歉，发生了错误，请稍后重试。",
-      role: "error",
-    });
+    if (error.name === 'AbortError') {
+      console.log('请求被中断');
+    } else {
+      console.error("Error:", error);
+      messages.value.push({
+        id: messages.value.length,
+        content: "抱歉，发生了错误，请稍后重试。",
+        role: "error",
+      });
+    }
   } finally {
     isLoading.value = false;
+    currentController = null;
   }
 };
+
+// 组件卸载时清理
+onUnmounted(() => {
+  if (currentController) {
+    currentController.abort();
+  }
+});
 
 // 添加 Markdown 转换函数
 const markdownToHtml = (content) => {
@@ -297,5 +334,38 @@ button:disabled {
     padding: 8px;
     font-size: 12px;
   }
+}
+
+.character-select {
+  display: flex;
+  gap: 15px;
+  padding: 10px 0;
+  border-bottom: 1px solid #eee;
+  margin-bottom: 10px;
+}
+
+.character-option {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 8px 12px;
+  border-radius: 20px;
+  cursor: pointer;
+  transition: all 0.3s;
+}
+
+.character-option img {
+  width: 24px;
+  height: 24px;
+  border-radius: 50%;
+}
+
+.character-option.active {
+  background-color: #e6f3ff;
+  color: #007aff;
+}
+
+.character-option:hover {
+  background-color: #f5f5f5;
 }
 </style>
