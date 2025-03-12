@@ -1,17 +1,55 @@
-## Ai-api-web
+# Ai-api-web
 
-This is a simple web application that uses the [ai-api](https://api-docs.deepseek.com/) to analyze text. The application is built using [vue.js](https://vuejs.org/) and [vite](https://vitejs.dev/).
+A lightweight web application leveraging the DeepSeek AI API for text analysis and processing. Built with Vue.js 3 and Vite for optimal performance and developer experience.
 
-## how to run
+## Features
 
-1. go to [ai-api](https://platform.deepseek.com/api_keys) and get an api key
-2. replace the api key in the `.env` file
-3. run `npm install`
-4. run `npm run dev`
-   
-## display
+- Real-time text analysis
+- Clean and intuitive user interface
+- Multiple analysis modes
+- Fast API response integration
 
-![alt text](image-display.png)
+## Getting Started
 
-![alt text](image.png)
+### Prerequisites
 
+- Node.js (v14 or higher)
+- npm (v6 or higher)
+
+### Installation & Setup
+
+1. Go to [DeepSeek Platform](https://platform.deepseek.com/api_keys) to obtain your API key
+2. Configure your environment:
+
+   ```bash
+   # Edit .env and add your API key
+   ```
+
+3. Install dependencies:
+
+   ```bash
+   npm install
+   ```
+
+4. Start the development server:
+
+   ```bash
+   npm run dev
+   ```
+
+## Preview
+
+Below is the application interface:
+
+![Application Interface](image-1.png)
+
+## Tech Stack
+
+- Vue.js 3
+- Vite
+- JavaScript
+- DeepSeek AI API
+
+## License
+
+MIT License
