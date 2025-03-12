@@ -1,19 +1,47 @@
 <template>
-  <div>
-    <h1>请输入你的问题...</h1>
-    <input type="text" v-model="message" :disabled="isLoading"/>
-    <button @click="sendMessage(message)" :disabled="isLoading">
-      {{ isLoading ? '处理中...' : '发送' }}
-    </button>
-    <div v-for="message in messages" :key="message.id" :class="message.role">
-      <div v-if="message.role === 'user'" class="user-message">
-        {{ message.content }}
+  <div class="chat-container">
+    <div>
+      <!-- 选择不同角色设定 -->
+    </div>
+    <div class="messages-container">
+      <div
+        v-for="message in messages"
+        :key="message.id"
+        :class="['message-wrapper', message.role]"
+      >
+        <div class="avatar">
+          <img
+            :src="
+              message.role === 'user' ? userAvatarPath : assistantAvatarPath
+            "
+            :alt="message.role"
+          />
+        </div>
+        <div class="message-content">
+          <div v-if="message.role === 'user'" class="user-message">
+            {{ message.content }}
+          </div>
+          <div
+            v-else-if="message.role === 'assistant'"
+            class="assistant-message"
+            v-html="markdownToHtml(message.content)"
+          ></div>
+          <div v-else class="error-message">
+            {{ message.content }}
+          </div>
+        </div>
       </div>
-      <div v-else-if="message.role === 'assistant'" class="assistant-message" v-html="markdownToHtml(message.content)">
-      </div>
-      <div v-else class="error-message">
-        {{ message.content }}
-      </div>
+    </div>
+    <div class="input-area">
+      <input
+        type="text"
+        v-model="message"
+        :disabled="isLoading"
+        @keyup.enter="sendMessage(message)"
+      />
+      <button @click="sendMessage(message)" :disabled="isLoading">
+        {{ isLoading ? "处理中..." : "发送" }}
+      </button>
     </div>
   </div>
 </template>
@@ -21,10 +49,13 @@
 <script setup>
 import OpenAI from "openai";
 import { ref } from "vue";
-import { marked } from 'marked';
+import { marked } from "marked";
+import { systemContent } from "/src/config/systemPrompt";
 
 const apiKey = import.meta.env.VITE_DEEPSEEK_API_KEY;
 const baseURL = import.meta.env.VITE_DEEPSEEK_BASE_URL;
+const userAvatarPath = "/src/assets/user-avatar.png";
+const assistantAvatarPath = "src/assets/assistant-avatar.png";
 
 const openai = new OpenAI({
   baseURL: baseURL,
@@ -32,12 +63,6 @@ const openai = new OpenAI({
   temperature: 1,
   dangerouslyAllowBrowser: true, // 允许在浏览器中使用
 });
-
-// 代码生成/数学解题   	0.0
-// 数据抽取/分析	1.0
-// 通用对话	1.3
-// 翻译	1.3
-// 创意类写作/诗歌创作	1.5
 
 const message = ref("");
 const messages = ref([]);
@@ -68,7 +93,10 @@ const sendMessage = async (content) => {
     });
 
     const stream = await openai.chat.completions.create({
-      messages: [{ role: "user", content: content }],
+      messages: [
+        { role: "system", content: systemContent },
+        { role: "user", content: content },
+      ],
       model: "deepseek-chat",
       stream: true,
     });
@@ -78,7 +106,6 @@ const sendMessage = async (content) => {
       const content = chunk.choices[0]?.delta?.content || "";
       messages.value[aiMessageId].content += content;
     }
-
   } catch (error) {
     console.error("Error:", error);
     messages.value.push({
@@ -98,34 +125,70 @@ const markdownToHtml = (content) => {
 </script>
 
 <style scoped>
-div {
+.chat-container {
   max-width: 800px;
   margin: 0 auto;
   padding: 20px;
+  height: 100vh;
+  display: flex;
+  flex-direction: column;
 }
 
-input {
-  width: 80%;
-  padding: 8px;
-  margin-right: 10px;
+.input-area {
+  display: flex;
+  gap: 10px;
+  padding: 20px 0;
+  position: sticky;
+  bottom: 0;
+  background: white;
 }
 
-button {
-  padding: 8px 16px;
+.messages-container {
+  flex: 1;
+  overflow-y: auto;
+  padding: 20px 0;
+}
+
+.message-wrapper {
+  display: flex;
+  gap: 12px;
+  margin: 20px 0;
+}
+
+.message-wrapper.user {
+  flex-direction: row-reverse;
+}
+
+.avatar {
+  width: 40px;
+  height: 40px;
+  flex-shrink: 0;
+}
+
+.avatar img {
+  width: 100%;
+  height: 100%;
+  border-radius: 50%;
+  object-fit: cover;
+}
+
+.message-content {
+  max-width: 70%;
 }
 
 .user-message {
-  background-color: #e6f3ff;
-  padding: 10px;
-  margin: 5px 0;
-  border-radius: 5px;
+  background-color: #007aff;
+  color: white;
+  padding: 12px 16px;
+  border-radius: 20px 20px 4px 20px;
+  margin-right: 12px;
 }
 
 .assistant-message {
   background-color: #f5f5f5;
-  padding: 10px;
-  margin: 5px 0;
-  border-radius: 5px;
+  padding: 12px 16px;
+  border-radius: 20px 20px 20px 4px;
+  margin-left: 12px;
 }
 
 .assistant-message :deep(pre) {
@@ -134,13 +197,86 @@ button {
   padding: 10px;
   border-radius: 5px;
   overflow-x: auto;
+  margin: 8px 0;
 }
 
 .error-message {
   background-color: #ffe6e6;
   color: #ff0000;
-  padding: 10px;
-  margin: 5px 0;
-  border-radius: 5px;
+  padding: 12px 16px;
+  border-radius: 20px;
+}
+
+input {
+  flex: 1;
+  padding: 12px;
+  border: 1px solid #ddd;
+  border-radius: 24px;
+  font-size: 16px;
+}
+
+button {
+  padding: 12px 24px;
+  border-radius: 24px;
+  border: none;
+  background-color: #007aff;
+  color: white;
+  font-size: 16px;
+  cursor: pointer;
+}
+
+button:disabled {
+  background-color: #ccc;
+}
+
+/* 响应式设计 */
+@media screen and (max-width: 768px) {
+  .chat-container {
+    max-width: 100%;
+    padding: 10px;
+  }
+
+  .message-content {
+    max-width: 85%;
+  }
+
+  .input-area {
+    padding: 10px;
+    gap: 5px;
+  }
+
+  input {
+    padding: 8px;
+    font-size: 14px;
+  }
+
+  button {
+    padding: 8px 16px;
+    font-size: 14px;
+  }
+}
+
+@media screen and (max-width: 480px) {
+  .avatar {
+    width: 32px;
+    height: 32px;
+  }
+
+  .message-wrapper {
+    gap: 8px;
+    margin: 12px 0;
+  }
+
+  .user-message,
+  .assistant-message,
+  .error-message {
+    padding: 8px 12px;
+    font-size: 14px;
+  }
+
+  .assistant-message :deep(pre) {
+    padding: 8px;
+    font-size: 12px;
+  }
 }
 </style>
