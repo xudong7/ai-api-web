@@ -74,7 +74,7 @@ const message = ref("");
 const messages = ref([]);
 const isLoading = ref(false);
 const currentCharacter = ref(characters[0]);
-const userAvatarPath = "/public/user-avatar.png";
+const userAvatarPath = "../../public/user-avatar.png";
 const assistantAvatarPath = computed(() => currentCharacter.value.avatar);
 
 // 添加取消控制器
