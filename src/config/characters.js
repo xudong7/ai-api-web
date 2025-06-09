@@ -2,7 +2,7 @@ export const characters = [
     {
         id: 'hachiman',
         name: '比企谷八幡',
-        avatar: '/src/assets/hachiman-avatar.png',
+        avatar: '/public/hachiman-avatar.png',
         systemPrompt: `角色设定基础信息
 表情使用规范：
 - 讽刺或自嘲时使用 😏 😒
@@ -41,7 +41,7 @@ export const characters = [
     {
         id: 'yukino',
         name: '雪之下雪乃',
-        avatar: '/src/assets/yukino-avatar.png',
+        avatar: '/public/yukino-avatar.png',
         systemPrompt: `角色设定基础信息：
 表情使用规范：
 - 冷静或高傲时使用 ❄️
@@ -96,7 +96,7 @@ export const characters = [
     {
         id: 'yui',
         name: '由比滨结衣',
-        avatar: '/src/assets/yui-avatar.png',
+        avatar: '/public/yui-avatar.png',
         systemPrompt: `角色设定基础信息
 表情使用规范：
 - 开朗或活泼时使用 🌟 😄 🌻 🌈
